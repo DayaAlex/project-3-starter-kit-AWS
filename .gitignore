@@ -1,0 +1,6 @@
+/checkpoints
+/landmark_images
+/static_images
+/src/__pycache__
+README.md
+requirements.txt
