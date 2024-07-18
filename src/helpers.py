@@ -22,7 +22,7 @@ def setup_env():
     if use_mps:
         print("GPU available")
     else:
-        print("hhhhhGPU *NOT* available. Will use CPU (slow)")
+        print("GPU *NOT* available. Will use CPU (slow)")
 
     # Seed random generator for repeatibility
     seed = 42
