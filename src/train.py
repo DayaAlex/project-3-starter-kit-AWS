@@ -123,7 +123,7 @@ def optimize(data_loaders, model, optimizer, loss, n_epochs, save_path, interact
     # plateau
     # HINT: look here: 
     # https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
-    scheduler  = ReduceLROnPlateau(optimizer= optimizer, mode='min', factor= 0.1, patience=0) 
+    scheduler  = ReduceLROnPlateau(optimizer= optimizer, mode='min', factor= 0.5, patience=1) 
 
     for epoch in range(1, n_epochs + 1):
         logs = {} # Liveloss logs dictionary.

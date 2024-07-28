@@ -31,6 +31,59 @@ class InitLayer(nn.Module):
         x = self.relu(x)
         return x
 
+class ResOneBottleneck(nn.Module):
+    def __init__(self, in_channels, out_channels): 
+        super(ResOneBottleneck, self).__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        
+        self.conv1 = nn.Conv2d(in_channels= self.in_channels,
+                                out_channels= self.in_channels,
+                                kernel_size= 3,
+                                stride= 1,
+                                bias= False,
+                                padding=1)
+        self.conv2 = nn.Conv2d(in_channels= self.in_channels,
+                                out_channels= self.out_channels,
+                                kernel_size= 3,
+                                bias=False,padding=1)
+
+        self.bn1 = nn.BatchNorm2d(self.in_channels)
+        self.bn2 = nn.BatchNorm2d(self.out_channels)
+        self.relu = nn.ReLU()
+
+    def forward(self,x: torch.Tensor) -> torch.Tensor:
+        
+        main = x
+        shortcut = x
+        
+        if self.in_channels != self.out_channels:
+            bs, c, h, w = shortcut.shape
+            # print('start shortcut',shortcut.shape)
+            extra_channels = self.out_channels - c
+            # print('extra channels',extra_channels)
+            channel_padding = torch.zeros((bs, extra_channels,h,w),device=x.device)
+            # print('padding shape',channel_padding.shape)
+            shortcut = torch.cat((shortcut,channel_padding),1)
+            # print('shortcut',shortcut.shape)
+    
+
+        # print('main shape', x.shape)
+        
+        main = self.conv1(x)
+        main = self.bn1(main)
+        main = self.relu(main)
+        # print('main shape', main.shape)
+        
+        main = self.conv2(main)
+        main = self.bn2(main)
+        main = self.relu(main)
+        # print('main shape', main.shape)
+        
+        main = main + shortcut
+
+        return main
+
 
 class ResTwoBottleneck(nn.Module):
     def __init__(self, in_channels, out_channels): 
@@ -112,25 +165,22 @@ class MyModel(nn.Module):
     def __init__(self, num_classes: int = 50, dropout: float = 0.7) -> None:
         super().__init__()
         self.init1 = InitLayer(3,64)#224 ->112 -> 56 
-        self.b10 = ResTwoBottleneck(64,256)
-        self.change1a = DownsampleToNext(256, 64)
-        self.b11 = ResTwoBottleneck(64,256)
-        self.change1b = DownsampleToNext(256, 64)
-        self.b12 = ResTwoBottleneck(64,256)
+        self.b10 = ResOneBottleneck(64,64)
+        self.b11 = ResOneBottleneck(64,64)
+        self.b12 = ResOneBottleneck(64,64)
         
-        self.downa = DownsampleToNext(256,128, down= True) #56 -> 28
-        self.b20 = ResTwoBottleneck(128,512)
-        self.chang2a = DownsampleToNext(512, 128)
-        self.b21 = ResTwoBottleneck(128,512)
+        self.downa = DownsampleToNext(64,128, down= True) #56 -> 28
+        self.b20 = ResOneBottleneck(128,128)
+        self.b21 = ResOneBottleneck(128,128)
         # self.b22 = ResTwoBottleneck(128,512)
         # self.b23 = ResTwoBottleneck(128,512)
-        self.downb = DownsampleToNext(512,256, down= True) #28 -> 14
-        self.b30 = ResTwoBottleneck(256, 1024)
-        self.downc = DownsampleToNext(1024, 512, down= True)# 14 -> 7
-        self.b40 = ResTwoBottleneck(512, 1024)
+        self.downb = DownsampleToNext(128,256, down= True) #28 -> 14
+        self.b30 = ResOneBottleneck(256, 256)
+        self.downc = DownsampleToNext(256, 512, down= True)# 14 -> 7
+        self.b40 = ResOneBottleneck(512, 512)
 
         self.b50 = nn.AvgPool2d(kernel_size=7, stride=1)
-        self.finalconv = nn.Conv2d(1024, num_classes, kernel_size= 1)
+        self.finalconv = nn.Conv2d(512, num_classes, kernel_size= 1)
         self.flat = nn.Flatten()
         self.softmax = nn.Softmax(dim=1)
 
@@ -138,20 +188,18 @@ class MyModel(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.init1(x)
         x = self.b10(x)
-        x = self.change1a(x)
         x = self.b11(x)
-        x = self.change1b(x)
         x = self.b12(x)
 
         x = self.downa(x)
         x = self.b20(x)
-        x = self.chang2a(x)
         x = self.b21(x)
 
         x = self.downb(x)
         x = self.b30(x)
         x = self.downc(x)
         x = self.b40(x)
+
         x = self.b50(x)
         x = self.finalconv(x)
         x = self.flat(x)
