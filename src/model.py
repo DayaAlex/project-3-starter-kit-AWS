@@ -95,9 +95,10 @@ class ResTwoBottleneck(nn.Module):
         return main
 
 class DownsampleToNext(nn.Module):
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, down = False):
         super(DownsampleToNext, self).__init__()
-        self.c1 = nn.Conv2d(in_channels,out_channels, kernel_size=3, stride=2, bias=False, padding= 1 )
+        self.stride = 2 if down else 1
+        self.c1 = nn.Conv2d(in_channels,out_channels, kernel_size=3, stride=self.stride, bias=False, padding= 1 )
         self.bn = nn.BatchNorm2d(out_channels)
 
     def forward(self,x: torch.Tensor) -> torch.Tensor:
@@ -112,17 +113,23 @@ class MyModel(nn.Module):
         super().__init__()
         self.init1 = InitLayer(3,64)#224 ->112 -> 56 
         self.b10 = ResTwoBottleneck(64,256)
-        # self.b11 = ResTwoBottleneck(64,256)
-        # self.b12 = ResTwoBottleneck(64,256)
-        self.downa = DownsampleToNext(256,128) #56 -> 28
+        self.change1a = DownsampleToNext(256, 64)
+        self.b11 = ResTwoBottleneck(64,256)
+        self.change1b = DownsampleToNext(256, 64)
+        self.b12 = ResTwoBottleneck(64,256)
+        
+        self.downa = DownsampleToNext(256,128, down= True) #56 -> 28
         self.b20 = ResTwoBottleneck(128,512)
-        # self.b21 = ResTwoBottleneck(128,512)
+        self.chang2a = DownsampleToNext(512, 128)
+        self.b21 = ResTwoBottleneck(128,512)
         # self.b22 = ResTwoBottleneck(128,512)
         # self.b23 = ResTwoBottleneck(128,512)
-        self.downb = DownsampleToNext(512,256) #28 -> 14
+        self.downb = DownsampleToNext(512,256, down= True) #28 -> 14
         self.b30 = ResTwoBottleneck(256, 1024)
+        self.downc = DownsampleToNext(1024, 512, down= True)# 14 -> 7
+        self.b40 = ResTwoBottleneck(512, 1024)
 
-        self.b50 = nn.AvgPool2d(kernel_size=14, stride=1)
+        self.b50 = nn.AvgPool2d(kernel_size=7, stride=1)
         self.finalconv = nn.Conv2d(1024, num_classes, kernel_size= 1)
         self.flat = nn.Flatten()
         self.softmax = nn.Softmax(dim=1)
@@ -131,8 +138,16 @@ class MyModel(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.init1(x)
         x = self.b10(x)
+        x = self.change1a(x)
+        x = self.b11(x)
+        x = self.change1b(x)
+        x = self.b12(x)
+
         x = self.downa(x)
         x = self.b20(x)
+        x = self.chang2a(x)
+        x = self.b21(x)
+
         x = self.downb(x)
         x = self.b30(x)
         x = self.downc(x)
@@ -142,6 +157,7 @@ class MyModel(nn.Module):
         x = self.flat(x)
 
         return x
+
 
 
 ######################################################################################
