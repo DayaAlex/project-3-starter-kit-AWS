@@ -1,7 +1,13 @@
 import torch
 import torch.nn as nn
 import torch.optim
+import os
 
+# Set the environment variable within the notebook
+os.environ["PYTORCH_MPS_HIGH_WATERMARK_RATIO"] = "0.0"
+
+# Optionally, verify that it's set
+print(os.environ["PYTORCH_MPS_HIGH_WATERMARK_RATIO"])
 
 def get_loss(use_cuda = True):
     """
@@ -12,7 +18,7 @@ def get_loss(use_cuda = True):
     # YOUR CODE HERE: select a loss appropriate for classification
     loss = nn.CrossEntropyLoss()
     if use_cuda:
-        loss = loss.cuda()
+        loss = loss.to(torch.device("mps"))
     return loss
 
 

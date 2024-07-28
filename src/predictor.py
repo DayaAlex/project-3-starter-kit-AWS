@@ -26,16 +26,17 @@ class Predictor(nn.Module):
             T.ConvertImageDtype(torch.float),
             T.Normalize(mean.tolist(), std.tolist())
         )
+        self.softmax = nn.Softmax(dim = 1)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         with torch.no_grad():
             # 1. apply transforms
-            x  = # YOUR CODE HERE
+            x  = self.transforms(x)
             # 2. get the logits
-            x  = # YOUR CODE HERE
+            x  = self.model(x)
             # 3. apply softmax
             #    HINT: remmeber to apply softmax across dim=1
-            x  = # YOUR CODE HERE
+            x  = self.softmax(x)
 
             return x
 

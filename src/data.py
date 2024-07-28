@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 
 def get_data_loaders(
-    batch_size: int = 32, valid_size: float = 0.2, num_workers: int = 1, limit: int = -1, **kwargs
+    batch_size: int = 16, valid_size: float = 0.2, num_workers: int = 1, limit: int = -1, **kwargs
 ):
     """
     Create and returns the train_one_epoch, validation and test data loaders.
@@ -45,8 +45,7 @@ def get_data_loaders(
         "train": transforms.Compose([transforms.Resize(256),
             transforms.CenterCrop(224),
             transforms.RandomHorizontalFlip(),
-            transforms.RandomAffine(degrees=15),
-            transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
+            transforms.RandomAffine(degrees=5),
             transforms.ToTensor(),]    
         ),
         "valid": transforms.Compose([transforms.Resize(256),

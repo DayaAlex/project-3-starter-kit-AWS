@@ -20,7 +20,13 @@ def setup_env():
     use_mps = torch.backends.mps.is_available()
 
     if use_mps:
+        print('hello')
         print("GPU available")
+        mps_device = torch.device("mps")
+        x = torch.ones(1, device=mps_device)
+    
+        print(x)
+        
     else:
         print("GPU *NOT* available. Will use CPU (slow)")
 
